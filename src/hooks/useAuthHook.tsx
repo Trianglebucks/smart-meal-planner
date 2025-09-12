@@ -1,15 +1,17 @@
-// Only auth is needed directly for getIdToken
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { FirebaseError } from "firebase/app";
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+
 import { authSchema } from "@/src/screens/Authentication/Authentication.schema";
 import {
   getUserProfile,
   registerUser,
   signInUser,
-  signOutUser, // Import signOutUser from service
-} from "@/src/services/auth.service"; // Import the new service functions
+  signOutUser,
+} from "@/src/services/auth.service";
 import { useAuthStore } from "@/src/stores/useAuthStore";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useState } from "react";
-import { useForm } from "react-hook-form";
 
 type FormData = {
   username?: string;
@@ -23,10 +25,76 @@ interface UseAuthProps {
   role: "customer" | "seller";
 }
 
+const authMutationFn = async ({
+  isRegister,
+  role,
+  data,
+}: {
+  isRegister: boolean;
+  role: "customer" | "seller";
+  data: FormData;
+}) => {
+  const { email, password, username } = data;
+
+  if (isRegister) {
+    if (!username) throw new Error("Username is required for registration.");
+    const user = await registerUser(email, password, username, role);
+    const token = await user.getIdToken();
+    return { token, role };
+  } else {
+    const user = await signInUser(email, password);
+    const userProfile = await getUserProfile(user.uid);
+
+    if (userProfile && userProfile.role === role) {
+      const token = await user.getIdToken();
+      return { token, role: userProfile.role };
+    } else {
+      await signOutUser();
+      throw new Error(`This account is not registered as a ${role}.`);
+    }
+  }
+};
+
 export const useAuth = ({ isRegister, role }: UseAuthProps) => {
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [customError, setCustomError] = useState<string | null>(null);
   const { setIsLoggedIn, setAccessToken, setUserRole } = useAuthStore();
+  const queryClient = useQueryClient();
+
+  const { mutate: performAuthAction, isPending } = useMutation({
+    mutationFn: authMutationFn,
+    onSuccess: (data) => {
+      setAccessToken(data.token);
+      setUserRole(data.role);
+      setIsLoggedIn(true);
+      queryClient.invalidateQueries({ queryKey: ["userProfile"] });
+    },
+    onError: (e: unknown) => {
+      if (e instanceof FirebaseError) {
+        switch (e.code) {
+          case "auth/email-already-in-use":
+            setCustomError("That email address is already in use!");
+            break;
+          case "auth/invalid-email":
+            setCustomError("That email address is invalid!");
+            break;
+          case "auth/user-not-found":
+          case "auth/wrong-password":
+          case "auth/invalid-credential":
+            setCustomError("Invalid email or password.");
+            break;
+          default:
+            setCustomError("An unknown error occurred. Please try again.");
+            break;
+        }
+      } else if (e instanceof Error) {
+        setCustomError(e.message);
+      }
+      console.error(e);
+    },
+    onMutate: () => {
+      setCustomError(null);
+    },
+  });
 
   const {
     control,
@@ -42,86 +110,33 @@ export const useAuth = ({ isRegister, role }: UseAuthProps) => {
     },
   });
 
-  const onSubmit = async (data: FormData) => {
-    const { email, password, username } = data;
-    setLoading(true);
-    setError(null);
-
-    try {
-      if (isRegister) {
-        // --- Call the service for registration ---
-        if (!username) {
-          // Ensure username is present for registration
-          throw new Error("Username is required for registration.");
-        }
-        const user = await registerUser(email, password, username, role);
-
-        const token = await user.getIdToken();
-        setAccessToken(token);
-        setUserRole(role);
-        setIsLoggedIn(true);
-      } else {
-        // --- Call the service for sign-in ---
-        const user = await signInUser(email, password);
-
-        // --- Fetch user profile and enforce role check ---
-        const userProfile = await getUserProfile(user.uid);
-
-        if (userProfile && userProfile.role === role) {
-          const token = await user.getIdToken();
-          setAccessToken(token);
-          setUserRole(userProfile.role);
-          setIsLoggedIn(true);
-        } else {
-          // Failure: Role mismatch or user document is missing.
-          await signOutUser(); // Use service function to sign out
-          setError(`This account is not registered as a ${role}.`);
-        }
-      }
-    } catch (e: any) {
-      // --- Refined error handling (now also catching errors thrown by service) ---
-      if (
-        e.code === "auth/email-already-in-use" ||
-        e.message === "auth/email-already-in-use"
-      ) {
-        setError("That email address is already in use!");
-      } else if (e.code === "auth/invalid-email") {
-        setError("That email address is invalid!");
-      } else if (
-        e.code === "auth/user-not-found" ||
-        e.code === "auth/wrong-password" ||
-        e.code === "auth/invalid-credential"
-      ) {
-        setError("Invalid email or password.");
-      } else {
-        setError("An unknown error occurred. Please try again.");
-      }
-      console.error(e);
-    } finally {
-      setLoading(false);
-    }
+  const onSubmit = (data: FormData) => {
+    performAuthAction({ isRegister, role, data });
   };
 
   return {
     control,
     errors,
-    loading,
-    error,
+    loading: isPending,
+    error: customError,
     handleAuthSubmit: handleSubmit(onSubmit),
   };
 };
 
 export const useLogout = () => {
   const { logout: logoutInStore } = useAuthStore();
+  const queryClient = useQueryClient();
 
-  const logout = async () => {
-    try {
-      await signOutUser(); // Call the service function to sign out
-      logoutInStore(); // Update the store state
-    } catch (error) {
+  const { mutate: logout, isPending: isLoggingOut } = useMutation({
+    mutationFn: signOutUser,
+    onSuccess: () => {
+      logoutInStore();
+      queryClient.clear();
+    },
+    onError: (error) => {
       console.error("Error during logout:", error);
-    }
-  };
+    },
+  });
 
-  return { logout };
+  return { logout, isLoggingOut };
 };
