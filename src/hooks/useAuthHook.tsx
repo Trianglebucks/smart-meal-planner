@@ -1,14 +1,14 @@
-// hooks/useAuth.ts
-import { auth } from "@/src/config/firebase.config";
+import { auth, db } from "@/src/config/firebase.config";
+import { authSchema } from "@/src/screens/Authentication/Authentication.schema";
 import { useAuthStore } from "@/src/stores/useAuthStore";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
 } from "firebase/auth";
+import { doc, getDoc, setDoc } from "firebase/firestore";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { authSchema } from "../screens/Authentication/Authentication.schema";
 
 type FormData = {
   email: string;
@@ -16,11 +16,15 @@ type FormData = {
   confirmPassword?: string;
 };
 
-// The hook accepts `isRegister` to dynamically change the validation schema
-export const useAuth = (isRegister: boolean) => {
+interface UseAuthProps {
+  isRegister: boolean;
+  role?: "customer" | "seller";
+}
+
+export const useAuth = ({ isRegister, role }: UseAuthProps) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { setIsLoggedIn, setAccessToken } = useAuthStore();
+  const { setIsLoggedIn, setAccessToken, setUserRole } = useAuthStore();
 
   const {
     control,
@@ -29,11 +33,7 @@ export const useAuth = (isRegister: boolean) => {
     watch,
   } = useForm({
     resolver: zodResolver(authSchema(isRegister)),
-    defaultValues: {
-      email: "",
-      password: "",
-      confirmPassword: "",
-    },
+    defaultValues: { email: "", password: "", confirmPassword: "" },
   });
 
   const onSubmit = async (data: FormData) => {
@@ -42,18 +42,45 @@ export const useAuth = (isRegister: boolean) => {
     setError(null);
 
     try {
-      const authFunction = isRegister
-        ? createUserWithEmailAndPassword
-        : signInWithEmailAndPassword;
+      if (isRegister) {
+        // --- Registration Logic ---
+        const result = await createUserWithEmailAndPassword(
+          auth,
+          email,
+          password
+        );
+        const user = result.user;
+        const userRole = role || "customer"; // Use role from params, default to customer
 
-      const result = await authFunction(auth, email, password);
-      const user = result.user;
-      const token = await user.getIdToken();
+        // Create role document in Firestore
+        await setDoc(doc(db, "roles", user.uid), { role: userRole });
 
-      setAccessToken(token);
-      setIsLoggedIn(true);
+        // Update global state
+        const token = await user.getIdToken();
+        setAccessToken(token);
+        setUserRole(userRole);
+        setIsLoggedIn(true);
+      } else {
+        // --- Login Logic ---
+        const result = await signInWithEmailAndPassword(auth, email, password);
+        const user = result.user;
+
+        // Fetch role document from Firestore
+        const roleRef = doc(db, "roles", user.uid);
+        const roleSnap = await getDoc(roleRef);
+
+        let userRole: "customer" | "seller" = "customer"; // Default role
+        if (roleSnap.exists()) {
+          userRole = roleSnap.data().role;
+        }
+
+        // Update global state
+        const token = await user.getIdToken();
+        setAccessToken(token);
+        setUserRole(userRole);
+        setIsLoggedIn(true);
+      }
     } catch (e: any) {
-      // Your existing error handling logic
       if (e.code === "auth/email-already-in-use") {
         setError("That email address is already in use!");
       } else if (e.code === "auth/invalid-email") {
@@ -72,13 +99,12 @@ export const useAuth = (isRegister: boolean) => {
     }
   };
 
-  // Return everything the component needs
   return {
     control,
     errors,
     loading,
     error,
-    passwordToConfirm: watch("password"), // For confirmPassword validation
-    handleAuthSubmit: handleSubmit(onSubmit), // Pre-wrapped submit handler
+    passwordToConfirm: watch("password"),
+    handleAuthSubmit: handleSubmit(onSubmit),
   };
 };

@@ -1,128 +1,145 @@
+import { ThemedSafeAreaView } from "@/src/components/atoms/SafeArewView";
 import { ThemedScrollView } from "@/src/components/atoms/ScrollView";
-import { useAuth } from "@/src/hooks/useAuthHook"; // Assuming the hook is in this path
+import { useAuth } from "@/src/hooks/useAuthHook";
+import { RootStackParamList } from "@/src/navigation/RootStackNavigator";
+import { RouteProp, useRoute } from "@react-navigation/native";
 import React, { useState } from "react";
 import { Controller } from "react-hook-form";
 import { StyleSheet, View } from "react-native";
 import { Button, HelperText, Text, TextInput } from "react-native-paper";
 
-export const AuthScreen = () => {
-  const [isRegister, setIsRegister] = useState(false);
+// --- Navigation Type Definitions ---
+// The AuthScreen is now a single route. It can optionally receive an initial state.
 
-  const { control, errors, loading, error, handleAuthSubmit } =
-    useAuth(isRegister);
+type AuthScreenRouteProp = RouteProp<RootStackParamList, "Authentication">;
+
+export const AuthScreen = () => {
+  const route = useRoute<AuthScreenRouteProp>();
+  // The screen's mode is now controlled by internal state.
+  // We just use the route params to set the *initial* state.
+  const [isRegister, setIsRegister] = useState(false);
+  // The role is also held in state, defaulting to 'customer' if not provided.
+  const role = route.params?.role || "customer";
+
+  const { control, errors, loading, error, handleAuthSubmit } = useAuth({
+    isRegister,
+    role,
+  });
+
+  // --- CORRECTED LOGIC ---
+  // Toggling now just flips the internal state, without navigating.
+  const handleToggle = () => {
+    if (loading) return;
+    setIsRegister(!isRegister);
+  };
 
   return (
-    <ThemedScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>
-        {isRegister ? "Create Account" : "Welcome Back!"}
-      </Text>
-      <Text style={styles.subtitle}>
-        {isRegister ? "Sign up to get started." : "Sign in to continue."}
-      </Text>
+    <ThemedSafeAreaView>
+      <ThemedScrollView contentContainerStyle={styles.container}>
+        <Text style={styles.title}>
+          {isRegister ? "Create Account" : "Welcome Back!"}
+        </Text>
+        <Text style={styles.subtitle}>
+          {isRegister ? `Sign up as a ${role}` : "Sign in to continue."}
+        </Text>
 
-      <View style={styles.inputContainer}>
-        <Controller
-          control={control}
-          name="email"
-          render={({ field: { onChange, onBlur, value } }) => (
-            <TextInput
-              label="Email"
-              mode="outlined"
-              onBlur={onBlur}
-              onChangeText={onChange}
-              value={value}
-              error={!!errors.email}
-              autoCapitalize="none"
-              keyboardType="email-address"
-            />
-          )}
-        />
-        {errors.email && (
-          <HelperText type="error">{errors.email.message}</HelperText>
-        )}
-      </View>
-
-      <View style={styles.inputContainer}>
-        <Controller
-          control={control}
-          name="password"
-          render={({ field: { onChange, onBlur, value } }) => (
-            <TextInput
-              label="Password"
-              mode="outlined"
-              secureTextEntry
-              onBlur={onBlur}
-              onChangeText={onChange}
-              value={value}
-              error={!!errors.password}
-            />
-          )}
-        />
-        {errors.password && (
-          <HelperText type="error">{errors.password.message}</HelperText>
-        )}
-      </View>
-
-      {isRegister && (
         <View style={styles.inputContainer}>
           <Controller
             control={control}
-            name="confirmPassword"
+            name="email"
             render={({ field: { onChange, onBlur, value } }) => (
               <TextInput
-                label="Confirm Password"
+                label="Email"
+                mode="outlined"
+                onBlur={onBlur}
+                onChangeText={onChange}
+                value={value}
+                error={!!errors.email}
+                autoCapitalize="none"
+                keyboardType="email-address"
+              />
+            )}
+          />
+          {errors.email && (
+            <HelperText type="error">{errors.email.message}</HelperText>
+          )}
+        </View>
+
+        <View style={styles.inputContainer}>
+          <Controller
+            control={control}
+            name="password"
+            render={({ field: { onChange, onBlur, value } }) => (
+              <TextInput
+                label="Password"
                 mode="outlined"
                 secureTextEntry
                 onBlur={onBlur}
                 onChangeText={onChange}
                 value={value}
-                error={!!errors.confirmPassword}
+                error={!!errors.password}
               />
             )}
           />
-          {errors.confirmPassword && (
-            <HelperText type="error">
-              {errors.confirmPassword.message}
-            </HelperText>
+          {errors.password && (
+            <HelperText type="error">{errors.password.message}</HelperText>
           )}
         </View>
-      )}
 
-      {error && <Text style={styles.errorText}>{error}</Text>}
+        {isRegister && (
+          <View style={styles.inputContainer}>
+            <Controller
+              control={control}
+              name="confirmPassword"
+              render={({ field: { onChange, onBlur, value } }) => (
+                <TextInput
+                  label="Confirm Password"
+                  mode="outlined"
+                  secureTextEntry
+                  onBlur={onBlur}
+                  onChangeText={onChange}
+                  value={value}
+                  error={!!errors.confirmPassword}
+                />
+              )}
+            />
+            {errors.confirmPassword && (
+              <HelperText type="error">
+                {errors.confirmPassword.message}
+              </HelperText>
+            )}
+          </View>
+        )}
 
-      <Button
-        mode="contained"
-        onPress={handleAuthSubmit}
-        style={styles.button}
-        labelStyle={{ fontWeight: "bold" }}
-        loading={loading}
-        disabled={loading}
-      >
-        {isRegister ? "Create Account" : "Log In"}
-      </Button>
+        {error && <Text style={styles.errorText}>{error}</Text>}
 
-      <View style={styles.toggleTextContainer}>
-        <Text>
-          {isRegister ? "Already have an account?" : "Don't have an account?"}
-        </Text>
-        <Text
-          style={styles.toggleLink}
-          onPress={() => {
-            if (!loading) {
-              setIsRegister(!isRegister);
-            }
-          }}
+        <Button
+          mode="contained"
+          onPress={handleAuthSubmit}
+          style={styles.button}
+          labelStyle={{ fontWeight: "bold" }}
+          loading={loading}
+          disabled={loading}
         >
-          {isRegister ? "Sign In" : "Sign Up"}
-        </Text>
-      </View>
-    </ThemedScrollView>
+          {isRegister ? "Create Account" : "Log In"}
+        </Button>
+
+        <View style={styles.toggleTextContainer}>
+          <Text>
+            {isRegister ? "Already have an account?" : "Don't have an account?"}
+          </Text>
+          <Text style={styles.toggleLink} onPress={handleToggle}>
+            {isRegister ? "Sign In" : "Sign Up"}
+          </Text>
+        </View>
+      </ThemedScrollView>
+    </ThemedSafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    flexGrow: 1, // Use flexGrow to ensure content can scroll if needed
+    flexGrow: 1,
     justifyContent: "center",
     padding: 20,
   },
@@ -135,6 +152,7 @@ const styles = StyleSheet.create({
   subtitle: {
     textAlign: "center",
     marginBottom: 24,
+    textTransform: "capitalize",
   },
   inputContainer: {
     marginBottom: 12,
@@ -144,6 +162,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   errorText: {
+    color: "red",
     textAlign: "center",
     marginTop: 10,
     marginBottom: 4,
@@ -156,5 +175,6 @@ const styles = StyleSheet.create({
   toggleLink: {
     fontWeight: "bold",
     marginLeft: 4,
+    color: "#6200ee",
   },
 });
