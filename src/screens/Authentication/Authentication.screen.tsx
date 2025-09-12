@@ -1,17 +1,22 @@
-import { ThemedSafeAreaView } from "@/src/components/atoms/SafeArewView";
-import { ThemedScrollView } from "@/src/components/atoms/ScrollView";
+import {
+  ThemedSafeAreaView,
+  ThemedScrollView,
+  ThemedText,
+} from "@/src/components/atoms";
+import { ThemedButton } from "@/src/components/atoms/Button";
+import { ThemedInput } from "@/src/components/molecules";
 import { useAuth } from "@/src/hooks/useAuthHook";
 import { RootStackParamList } from "@/src/navigation/RootStackNavigator";
-import { RouteProp, useRoute } from "@react-navigation/native";
+import { RouteProp, useNavigation, useRoute } from "@react-navigation/native"; // Import useNavigation
 import React, { useState } from "react";
 import { Controller } from "react-hook-form";
 import { StyleSheet, View } from "react-native";
-import { Button, HelperText, Text, TextInput } from "react-native-paper";
 
 type AuthScreenRouteProp = RouteProp<RootStackParamList, "Authentication">;
 
 export const AuthScreen = () => {
   const route = useRoute<AuthScreenRouteProp>();
+  const navigation = useNavigation(); // Initialize useNavigation
   const [isRegister, setIsRegister] = useState(false);
   const role = route.params?.role || "customer";
 
@@ -25,15 +30,32 @@ export const AuthScreen = () => {
     setIsRegister(!isRegister);
   };
 
+  const handleGoBack = () => {
+    navigation.goBack(); // Navigate back to the previous screen (RoleSelectionScreen)
+  };
+
   return (
-    <ThemedSafeAreaView>
-      <ThemedScrollView contentContainerStyle={styles.container}>
-        <Text style={styles.title}>
+    <ThemedSafeAreaView style={styles.flexContainer}>
+      {/* Back Button */}
+      <ThemedButton
+        icon="arrow-left" // MaterialCommunityIcons arrow-left icon
+        type="text" // Text mode for a subtle button
+        onPress={handleGoBack}
+        style={styles.backButton}
+        labelStyle={styles.backButtonLabel}
+      >
+        Back
+      </ThemedButton>
+
+      <ThemedScrollView contentContainerStyle={styles.scrollContent}>
+        <ThemedText type="title" bold>
           {isRegister ? "Create Account" : "Welcome Back!"}
-        </Text>
-        <Text style={styles.subtitle}>
-          {isRegister ? `Sign up as a ${role}` : "Sign in to continue."}
-        </Text>
+        </ThemedText>
+        <ThemedText type="subtitle" style={styles.subtitle}>
+          {isRegister
+            ? `Sign up as a ${role}`
+            : `Sign in to continue as ${role}.`}
+        </ThemedText>
 
         {isRegister && (
           <View style={styles.inputContainer}>
@@ -41,7 +63,7 @@ export const AuthScreen = () => {
               control={control}
               name="username"
               render={({ field: { onChange, onBlur, value } }) => (
-                <TextInput
+                <ThemedInput
                   label="Username"
                   mode="outlined"
                   onBlur={onBlur}
@@ -49,12 +71,10 @@ export const AuthScreen = () => {
                   value={value}
                   error={!!errors.username}
                   autoCapitalize="none"
+                  errorText={errors?.username?.message}
                 />
               )}
             />
-            {errors.username && (
-              <HelperText type="error">{errors.username.message}</HelperText>
-            )}
           </View>
         )}
 
@@ -63,7 +83,7 @@ export const AuthScreen = () => {
             control={control}
             name="email"
             render={({ field: { onChange, onBlur, value } }) => (
-              <TextInput
+              <ThemedInput
                 label="Email"
                 mode="outlined"
                 onBlur={onBlur}
@@ -72,12 +92,10 @@ export const AuthScreen = () => {
                 error={!!errors.email}
                 autoCapitalize="none"
                 keyboardType="email-address"
+                errorText={errors?.email?.message}
               />
             )}
           />
-          {errors.email && (
-            <HelperText type="error">{errors.email.message}</HelperText>
-          )}
         </View>
 
         <View style={styles.inputContainer}>
@@ -85,7 +103,7 @@ export const AuthScreen = () => {
             control={control}
             name="password"
             render={({ field: { onChange, onBlur, value } }) => (
-              <TextInput
+              <ThemedInput
                 label="Password"
                 mode="outlined"
                 secureTextEntry
@@ -93,12 +111,10 @@ export const AuthScreen = () => {
                 onChangeText={onChange}
                 value={value}
                 error={!!errors.password}
+                errorText={errors?.password?.message}
               />
             )}
           />
-          {errors.password && (
-            <HelperText type="error">{errors.password.message}</HelperText>
-          )}
         </View>
 
         {isRegister && (
@@ -107,7 +123,7 @@ export const AuthScreen = () => {
               control={control}
               name="confirmPassword"
               render={({ field: { onChange, onBlur, value } }) => (
-                <TextInput
+                <ThemedInput
                   label="Confirm Password"
                   mode="outlined"
                   secureTextEntry
@@ -115,37 +131,41 @@ export const AuthScreen = () => {
                   onChangeText={onChange}
                   value={value}
                   error={!!errors.confirmPassword}
+                  errorText={errors?.confirmPassword?.message}
                 />
               )}
             />
-            {errors.confirmPassword && (
-              <HelperText type="error">
-                {errors.confirmPassword.message}
-              </HelperText>
-            )}
           </View>
         )}
 
-        {error && <Text style={styles.errorText}>{error}</Text>}
+        {error && (
+          <ThemedText type="error" bold>
+            {error}
+          </ThemedText>
+        )}
 
-        <Button
-          mode="contained"
+        <ThemedButton
+          type="primary"
           onPress={handleAuthSubmit}
           style={styles.button}
-          labelStyle={{ fontWeight: "bold" }}
+          labelStyle={styles.buttonLabel}
           loading={loading}
           disabled={loading}
         >
           {isRegister ? "Create Account" : "Log In"}
-        </Button>
+        </ThemedButton>
 
         <View style={styles.toggleTextContainer}>
-          <Text>
+          <ThemedText type="body">
             {isRegister ? "Already have an account?" : "Don't have an account?"}
-          </Text>
-          <Text style={styles.toggleLink} onPress={handleToggle}>
+          </ThemedText>
+          <ThemedText
+            style={styles.toggleLink}
+            type="link"
+            onPress={handleToggle}
+          >
             {isRegister ? "Sign In" : "Sign Up"}
-          </Text>
+          </ThemedText>
         </View>
       </ThemedScrollView>
     </ThemedSafeAreaView>
@@ -153,19 +173,23 @@ export const AuthScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  container: {
+  flexContainer: {
+    flex: 1,
+  },
+  backButton: {
+    paddingHorizontal: 5, // Reduce padding for a more compact button
+    alignSelf: "flex-start", // Align button itself to the start
+  },
+  backButtonLabel: {
+    fontSize: 14, // Adjust font size if "Back" text is too large
+  },
+  scrollContent: {
     flexGrow: 1,
     justifyContent: "center",
     padding: 20,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: "bold",
-    marginBottom: 8,
-    textAlign: "center",
+    paddingTop: 60, // Add top padding to prevent content from going behind the back button
   },
   subtitle: {
-    textAlign: "center",
     marginBottom: 24,
     textTransform: "capitalize",
   },
@@ -176,11 +200,8 @@ const styles = StyleSheet.create({
     marginTop: 16,
     paddingVertical: 8,
   },
-  errorText: {
-    color: "red",
-    textAlign: "center",
-    marginTop: 10,
-    marginBottom: 4,
+  buttonLabel: {
+    fontWeight: "bold",
   },
   toggleTextContainer: {
     flexDirection: "row",

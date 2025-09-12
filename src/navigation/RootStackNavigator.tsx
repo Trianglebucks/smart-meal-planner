@@ -31,7 +31,11 @@ export const RootStackNavigator: React.FC = () => {
               options={{ headerShown: false }}
             />
             {/* This screen will now show the header and back button by default */}
-            <Stack.Screen name="Authentication" component={AuthScreen} />
+            <Stack.Screen
+              name="Authentication"
+              component={AuthScreen}
+              options={{ headerShown: false }}
+            />
           </>
         )}
       </Stack.Navigator>

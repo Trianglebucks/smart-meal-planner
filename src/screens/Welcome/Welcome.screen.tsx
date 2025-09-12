@@ -1,10 +1,10 @@
-import { ThemedSafeAreaView } from "@/src/components/atoms/SafeArewView";
+import { ThemedButton, ThemedText } from "@/src/components/atoms";
+import { ThemedSafeAreaView } from "@/src/components/atoms/SafeAreaView";
 import { RootStackParamList } from "@/src/navigation/RootStackNavigator";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import React from "react";
 import { Image, StyleSheet, View } from "react-native";
-import { Button, Text, useTheme } from "react-native-paper";
 
 type WelcomeScreenNavigationProp = NativeStackNavigationProp<
   RootStackParamList,
@@ -13,16 +13,13 @@ type WelcomeScreenNavigationProp = NativeStackNavigationProp<
 
 export const WelcomeScreen = () => {
   const navigation = useNavigation<WelcomeScreenNavigationProp>();
-  const { colors } = useTheme();
 
   const handleRoleSelection = (role: "customer" | "seller") => {
     navigation.navigate("Authentication", { role });
   };
 
   return (
-    <ThemedSafeAreaView
-      style={[styles.container, { backgroundColor: colors.background }]}
-    >
+    <ThemedSafeAreaView style={styles.container}>
       {/* Top content area for the logo and text */}
       <View style={styles.content}>
         <Image
@@ -30,34 +27,34 @@ export const WelcomeScreen = () => {
           style={styles.logo}
           resizeMode="contain" // Ensures the whole logo is visible
         />
-        <Text variant="headlineLarge" style={styles.title}>
+        <ThemedText type="title" bold>
           Welcome!
-        </Text>
-        <Text variant="bodyLarge" style={styles.subtitle}>
-          Discover Local Eateries
-        </Text>
+        </ThemedText>
+        <ThemedText type="subtitle">Discover Local Eateries</ThemedText>
       </View>
 
       {/* Bottom container for the action buttons */}
       <View style={styles.buttonContainer}>
-        <Button
-          mode="contained"
+        <ThemedButton
+          type="primary"
           onPress={() => handleRoleSelection("customer")}
           style={styles.button}
           labelStyle={styles.buttonText}
           icon="account"
+          bold
         >
           Im a Customer
-        </Button>
-        <Button
-          mode="outlined"
+        </ThemedButton>
+        <ThemedButton
+          type="outline"
           onPress={() => handleRoleSelection("seller")}
           style={styles.button}
           labelStyle={styles.buttonText}
           icon="store"
+          bold
         >
           Im a Seller
-        </Button>
+        </ThemedButton>
       </View>
     </ThemedSafeAreaView>
   );
@@ -81,25 +78,15 @@ const styles = StyleSheet.create({
     aspectRatio: 1, // Keep it square
     marginBottom: 20,
   },
-  title: {
-    fontWeight: "bold",
-    textAlign: "center",
-    marginBottom: 8,
-  },
-  subtitle: {
-    textAlign: "center",
-    color: "#6c757d", // A softer color for the subtitle
-  },
   buttonContainer: {
     paddingHorizontal: 20,
     paddingBottom: 40,
+    gap: 15,
   },
   button: {
-    marginBottom: 15,
     paddingVertical: 8,
   },
   buttonText: {
     fontSize: 18,
-    fontWeight: "bold",
   },
 });
