@@ -110,3 +110,18 @@ export const useAuth = ({ isRegister, role }: UseAuthProps) => {
     handleAuthSubmit: handleSubmit(onSubmit),
   };
 };
+
+export const useLogout = () => {
+  const { logout: logoutInStore } = useAuthStore();
+
+  const logout = async () => {
+    try {
+      await signOutUser(); // Call the service function to sign out
+      logoutInStore(); // Update the store state
+    } catch (error) {
+      console.error("Error during logout:", error);
+    }
+  };
+
+  return { logout };
+};

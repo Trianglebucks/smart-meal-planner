@@ -1,4 +1,3 @@
-import React from "react";
 // ButtonProps from react-native is no longer needed
 import { StyleProp, TextStyle, ViewStyle } from "react-native";
 import { Button as PaperButton, useTheme } from "react-native-paper";

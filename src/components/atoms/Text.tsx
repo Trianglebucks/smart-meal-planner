@@ -1,4 +1,3 @@
-import React from "react";
 import { StyleProp, TextProps, TextStyle } from "react-native";
 import { Text as PaperText, useTheme } from "react-native-paper";
 

@@ -1,4 +1,3 @@
-import React from "react";
 import { ScrollView, ScrollViewProps, StyleSheet } from "react-native";
 import { useTheme } from "react-native-paper";
 

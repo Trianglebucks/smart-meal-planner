@@ -3,7 +3,7 @@ import { ThemedSafeAreaView } from "@/src/components/atoms/SafeAreaView";
 import { RootStackParamList } from "@/src/navigation/RootStackNavigator";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import React from "react";
+
 import { Image, StyleSheet, View } from "react-native";
 
 type WelcomeScreenNavigationProp = NativeStackNavigationProp<
