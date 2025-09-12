@@ -24,8 +24,8 @@
         <action android:name="android.intent.action.VIEW"/>
         <category android:name="android.intent.category.DEFAULT"/>
         <category android:name="android.intent.category.BROWSABLE"/>
-        <data android:scheme="smartmealplanner"/>
-        <data android:scheme="exp+smart-meal-planner"/>
+        <data android:scheme="sukimenu"/>
+        <data android:scheme="exp+sukimenu"/>
       </intent-filter>
     </activity>
   </application>

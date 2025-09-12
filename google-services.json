@@ -1,21 +1,21 @@
 {
   "project_info": {
-    "project_number": "1063230855092",
-    "project_id": "smart-meal-planner-8d1f2",
-    "storage_bucket": "smart-meal-planner-8d1f2.firebasestorage.app"
+    "project_number": "712102524565",
+    "project_id": "suki-menu",
+    "storage_bucket": "suki-menu.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:1063230855092:android:76b5c00e458ee41af804e1",
+        "mobilesdk_app_id": "1:712102524565:android:107d8ece99c90696fa4d9c",
         "android_client_info": {
-          "package_name": "com.smartmealplanner"
+          "package_name": "com.sukimenu"
         }
       },
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyA2-JQnno1mFetW2BtZzSjsMRq507qHoaU"
+          "current_key": "AIzaSyCJCyuFtYixEJA0voP3Y2ZF8oVPRP0-Zkg"
         }
       ],
       "services": {

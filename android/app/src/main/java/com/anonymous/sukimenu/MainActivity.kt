@@ -1,4 +1,4 @@
-package com.anonymous.smartmealplanner
+package com.anonymous.sukimenu
 import expo.modules.splashscreen.SplashScreenManager
 
 import android.os.Build
