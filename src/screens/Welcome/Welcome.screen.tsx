@@ -38,7 +38,7 @@ export const WelcomeScreen = () => {
         <ThemedButton
           type="primary"
           onPress={() => handleRoleSelection("customer")}
-          style={styles.button}
+          contentStyle={styles.button}
           labelStyle={styles.buttonText}
           icon="account"
           bold
@@ -48,7 +48,7 @@ export const WelcomeScreen = () => {
         <ThemedButton
           type="outline"
           onPress={() => handleRoleSelection("seller")}
-          style={styles.button}
+          contentStyle={styles.button}
           labelStyle={styles.buttonText}
           icon="store"
           bold

@@ -1,16 +1,16 @@
-import { auth, db } from "@/src/config/firebase.config";
+// Only auth is needed directly for getIdToken
 import { authSchema } from "@/src/screens/Authentication/Authentication.schema";
+import {
+  getUserProfile,
+  registerUser,
+  signInUser,
+  signOutUser, // Import signOutUser from service
+} from "@/src/services/auth.service"; // Import the new service functions
 import { useAuthStore } from "@/src/stores/useAuthStore";
 import { zodResolver } from "@hookform/resolvers/zod";
-import {
-  createUserWithEmailAndPassword,
-  signInWithEmailAndPassword,
-} from "firebase/auth";
-import { doc, getDoc, setDoc } from "firebase/firestore";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 
-// --- Updated FormData type to include username ---
 type FormData = {
   username?: string;
   email: string;
@@ -34,7 +34,6 @@ export const useAuth = ({ isRegister, role }: UseAuthProps) => {
     formState: { errors },
   } = useForm<FormData>({
     resolver: zodResolver(authSchema(isRegister)),
-    // --- Add username to default values ---
     defaultValues: {
       username: "",
       email: "",
@@ -44,59 +43,54 @@ export const useAuth = ({ isRegister, role }: UseAuthProps) => {
   });
 
   const onSubmit = async (data: FormData) => {
-    const { email, password, username } = data; // Destructure username
+    const { email, password, username } = data;
     setLoading(true);
     setError(null);
 
     try {
       if (isRegister) {
-        // --- Registration Logic ---
-        const result = await createUserWithEmailAndPassword(
-          auth,
-          email,
-          password
-        );
-        const user = result.user;
+        // --- Call the service for registration ---
+        if (!username) {
+          // Ensure username is present for registration
+          throw new Error("Username is required for registration.");
+        }
+        const user = await registerUser(email, password, username, role);
 
-        // Create the user document in the 'users' collection with the username
-        const userDocRef = doc(db, "users", user.uid);
-        await setDoc(userDocRef, {
-          username: username, // Use the username from the form
-          email: user.email,
-          role: role,
-        });
-
-        // Update global state
         const token = await user.getIdToken();
         setAccessToken(token);
         setUserRole(role);
         setIsLoggedIn(true);
       } else {
-        // --- Login Logic ---
-        const result = await signInWithEmailAndPassword(auth, email, password);
-        const user = result.user;
+        // --- Call the service for sign-in ---
+        const user = await signInUser(email, password);
 
-        // Fetch user document from the 'users' collection
-        const userDocRef = doc(db, "users", user.uid);
-        const userDoc = await getDoc(userDocRef);
+        // --- Fetch user profile and enforce role check ---
+        const userProfile = await getUserProfile(user.uid);
 
-        // Determine role from the document, default to 'customer'
-        const userRole = userDoc.exists() ? userDoc.data().role : "customer";
-
-        // Update global state
-        const token = await user.getIdToken();
-        setAccessToken(token);
-        setUserRole(userRole);
-        setIsLoggedIn(true);
+        if (userProfile && userProfile.role === role) {
+          const token = await user.getIdToken();
+          setAccessToken(token);
+          setUserRole(userProfile.role);
+          setIsLoggedIn(true);
+        } else {
+          // Failure: Role mismatch or user document is missing.
+          await signOutUser(); // Use service function to sign out
+          setError(`This account is not registered as a ${role}.`);
+        }
       }
     } catch (e: any) {
-      if (e.code === "auth/email-already-in-use") {
+      // --- Refined error handling (now also catching errors thrown by service) ---
+      if (
+        e.code === "auth/email-already-in-use" ||
+        e.message === "auth/email-already-in-use"
+      ) {
         setError("That email address is already in use!");
       } else if (e.code === "auth/invalid-email") {
         setError("That email address is invalid!");
       } else if (
         e.code === "auth/user-not-found" ||
-        e.code === "auth/wrong-password"
+        e.code === "auth/wrong-password" ||
+        e.code === "auth/invalid-credential"
       ) {
         setError("Invalid email or password.");
       } else {

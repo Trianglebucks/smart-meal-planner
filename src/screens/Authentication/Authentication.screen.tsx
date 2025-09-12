@@ -181,7 +181,7 @@ const styles = StyleSheet.create({
     alignSelf: "flex-start", // Align button itself to the start
   },
   backButtonLabel: {
-    fontSize: 14, // Adjust font size if "Back" text is too large
+    fontSize: 20, // Adjust font size if "Back" text is too large
   },
   scrollContent: {
     flexGrow: 1,
@@ -198,7 +198,6 @@ const styles = StyleSheet.create({
   },
   button: {
     marginTop: 16,
-    paddingVertical: 8,
   },
   buttonLabel: {
     fontWeight: "bold",
