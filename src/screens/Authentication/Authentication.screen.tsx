@@ -190,6 +190,5 @@ const styles = StyleSheet.create({
   toggleLink: {
     fontWeight: "bold",
     marginLeft: 4,
-    color: "#6200ee",
   },
 });
