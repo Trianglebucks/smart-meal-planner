@@ -1,8 +1,9 @@
+import { ThemedSafeAreaView } from "@/src/components/atoms/SafeArewView";
 import { RootStackParamList } from "@/src/navigation/RootStackNavigator";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import React from "react";
-import { Image, SafeAreaView, StyleSheet, View } from "react-native";
+import { Image, StyleSheet, View } from "react-native";
 import { Button, Text, useTheme } from "react-native-paper";
 
 type WelcomeScreenNavigationProp = NativeStackNavigationProp<
@@ -19,22 +20,25 @@ export const WelcomeScreen = () => {
   };
 
   return (
-    <SafeAreaView
+    <ThemedSafeAreaView
       style={[styles.container, { backgroundColor: colors.background }]}
     >
+      {/* Top content area for the logo and text */}
       <View style={styles.content}>
         <Image
           source={require("../../../assets/images/app-logo.png")}
           style={styles.logo}
+          resizeMode="contain" // Ensures the whole logo is visible
         />
         <Text variant="headlineLarge" style={styles.title}>
-          How will you be using our app?
+          Welcome!
         </Text>
         <Text variant="bodyLarge" style={styles.subtitle}>
-          Please select your role to continue.
+          Discover Local Eateries
         </Text>
       </View>
 
+      {/* Bottom container for the action buttons */}
       <View style={styles.buttonContainer}>
         <Button
           mode="contained"
@@ -55,38 +59,36 @@ export const WelcomeScreen = () => {
           Im a Seller
         </Button>
       </View>
-    </SafeAreaView>
+    </ThemedSafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    // Distribute content more evenly instead of pushing to extremes
-    justifyContent: "center",
+    // This pushes the content to the top and buttons to the bottom
+    justifyContent: "space-between",
   },
   content: {
-    // This no longer needs flex: 1, which was causing the large gap
-    justifyContent: "center",
     alignItems: "center",
+    paddingTop: 80, // Give some space from the top
     paddingHorizontal: 20,
-    marginBottom: 60, // Add some space above the buttons
   },
   logo: {
-    // Increased size for more presence, while maintaining balance
-    width: 250,
-    height: 250,
-    borderRadius: 25, // Adjusted for the larger size
-    marginBottom: 40,
+    // Make the logo large and responsive
+    width: "85%",
+    height: undefined,
+    aspectRatio: 1, // Keep it square
+    marginBottom: 20,
   },
   title: {
     fontWeight: "bold",
     textAlign: "center",
-    marginBottom: 10,
+    marginBottom: 8,
   },
   subtitle: {
     textAlign: "center",
-    // Removed marginBottom as spacing is now handled by the container
+    color: "#6c757d", // A softer color for the subtitle
   },
   buttonContainer: {
     paddingHorizontal: 20,

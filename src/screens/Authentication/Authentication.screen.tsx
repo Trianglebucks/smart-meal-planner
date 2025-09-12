@@ -8,17 +8,11 @@ import { Controller } from "react-hook-form";
 import { StyleSheet, View } from "react-native";
 import { Button, HelperText, Text, TextInput } from "react-native-paper";
 
-// --- Navigation Type Definitions ---
-// The AuthScreen is now a single route. It can optionally receive an initial state.
-
 type AuthScreenRouteProp = RouteProp<RootStackParamList, "Authentication">;
 
 export const AuthScreen = () => {
   const route = useRoute<AuthScreenRouteProp>();
-  // The screen's mode is now controlled by internal state.
-  // We just use the route params to set the *initial* state.
   const [isRegister, setIsRegister] = useState(false);
-  // The role is also held in state, defaulting to 'customer' if not provided.
   const role = route.params?.role || "customer";
 
   const { control, errors, loading, error, handleAuthSubmit } = useAuth({
@@ -26,8 +20,6 @@ export const AuthScreen = () => {
     role,
   });
 
-  // --- CORRECTED LOGIC ---
-  // Toggling now just flips the internal state, without navigating.
   const handleToggle = () => {
     if (loading) return;
     setIsRegister(!isRegister);
@@ -42,6 +34,29 @@ export const AuthScreen = () => {
         <Text style={styles.subtitle}>
           {isRegister ? `Sign up as a ${role}` : "Sign in to continue."}
         </Text>
+
+        {isRegister && (
+          <View style={styles.inputContainer}>
+            <Controller
+              control={control}
+              name="username"
+              render={({ field: { onChange, onBlur, value } }) => (
+                <TextInput
+                  label="Username"
+                  mode="outlined"
+                  onBlur={onBlur}
+                  onChangeText={onChange}
+                  value={value}
+                  error={!!errors.username}
+                  autoCapitalize="none"
+                />
+              )}
+            />
+            {errors.username && (
+              <HelperText type="error">{errors.username.message}</HelperText>
+            )}
+          </View>
+        )}
 
         <View style={styles.inputContainer}>
           <Controller

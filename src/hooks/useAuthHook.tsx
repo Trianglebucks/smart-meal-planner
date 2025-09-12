@@ -10,7 +10,9 @@ import { doc, getDoc, setDoc } from "firebase/firestore";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 
+// --- Updated FormData type to include username ---
 type FormData = {
+  username?: string;
   email: string;
   password: string;
   confirmPassword?: string;
@@ -18,7 +20,7 @@ type FormData = {
 
 interface UseAuthProps {
   isRegister: boolean;
-  role?: "customer" | "seller";
+  role: "customer" | "seller";
 }
 
 export const useAuth = ({ isRegister, role }: UseAuthProps) => {
@@ -30,14 +32,19 @@ export const useAuth = ({ isRegister, role }: UseAuthProps) => {
     control,
     handleSubmit,
     formState: { errors },
-    watch,
-  } = useForm({
+  } = useForm<FormData>({
     resolver: zodResolver(authSchema(isRegister)),
-    defaultValues: { email: "", password: "", confirmPassword: "" },
+    // --- Add username to default values ---
+    defaultValues: {
+      username: "",
+      email: "",
+      password: "",
+      confirmPassword: "",
+    },
   });
 
   const onSubmit = async (data: FormData) => {
-    const { email, password } = data;
+    const { email, password, username } = data; // Destructure username
     setLoading(true);
     setError(null);
 
@@ -50,29 +57,31 @@ export const useAuth = ({ isRegister, role }: UseAuthProps) => {
           password
         );
         const user = result.user;
-        const userRole = role || "customer"; // Use role from params, default to customer
 
-        // Create role document in Firestore
-        await setDoc(doc(db, "roles", user.uid), { role: userRole });
+        // Create the user document in the 'users' collection with the username
+        const userDocRef = doc(db, "users", user.uid);
+        await setDoc(userDocRef, {
+          username: username, // Use the username from the form
+          email: user.email,
+          role: role,
+        });
 
         // Update global state
         const token = await user.getIdToken();
         setAccessToken(token);
-        setUserRole(userRole);
+        setUserRole(role);
         setIsLoggedIn(true);
       } else {
         // --- Login Logic ---
         const result = await signInWithEmailAndPassword(auth, email, password);
         const user = result.user;
 
-        // Fetch role document from Firestore
-        const roleRef = doc(db, "roles", user.uid);
-        const roleSnap = await getDoc(roleRef);
+        // Fetch user document from the 'users' collection
+        const userDocRef = doc(db, "users", user.uid);
+        const userDoc = await getDoc(userDocRef);
 
-        let userRole: "customer" | "seller" = "customer"; // Default role
-        if (roleSnap.exists()) {
-          userRole = roleSnap.data().role;
-        }
+        // Determine role from the document, default to 'customer'
+        const userRole = userDoc.exists() ? userDoc.data().role : "customer";
 
         // Update global state
         const token = await user.getIdToken();
@@ -104,7 +113,6 @@ export const useAuth = ({ isRegister, role }: UseAuthProps) => {
     errors,
     loading,
     error,
-    passwordToConfirm: watch("password"),
     handleAuthSubmit: handleSubmit(onSubmit),
   };
 };
